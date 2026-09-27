@@ -32,6 +32,8 @@ export interface Character {
   relationshipWithVictim: string;
   secrets: string[];
   alibi: string;
+  observations: string[];
+  questions: string[];
   assignedToPlayerId: string | null;
   assignedPlayerName: string | null;
 }
@@ -57,6 +59,7 @@ export interface RoomSettings {
   complexity: string;
   playerCount: number;
   customNotes: string;
+  participantNames: string[];
 }
 
 export interface RoomMeta {

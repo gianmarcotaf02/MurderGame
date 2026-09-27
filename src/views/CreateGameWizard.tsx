@@ -32,10 +32,20 @@ export function CreateGameWizard({
   const [tone, setTone] = useState(TONES[0]);
   const [complexity, setComplexity] = useState("Media");
   const [playerCount, setPlayerCount] = useState(6);
+  const [participantNames, setParticipantNames] = useState<string[]>(Array(6).fill(""));
   const [allowSuicideOrAccident, setAllowSuicideOrAccident] = useState(true);
   const [customNotes, setCustomNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const setCount = (n: number) => {
+    setPlayerCount(n);
+    setParticipantNames((prev) => {
+      const next = [...prev];
+      while (next.length < n) next.push("");
+      return next.slice(0, n);
+    });
+  };
 
   const handleSubmit = async () => {
     setError(null);
@@ -50,6 +60,7 @@ export function CreateGameWizard({
         complexity,
         playerCount,
         customNotes: customNotes.trim(),
+        participantNames: participantNames.map((n) => n.trim()).filter(Boolean),
       };
       const code = await createRoom(settings, uid, hostName.trim());
       onCreated(code, hostName.trim() || "Game Master");
@@ -168,7 +179,7 @@ export function CreateGameWizard({
             <button
               type="button"
               className="btn btn-gold px-4"
-              onClick={() => setPlayerCount((n) => Math.max(3, n - 1))}
+              onClick={() => setCount(Math.max(3, playerCount - 1))}
               disabled={playerCount <= 3}
               aria-label="Riduci partecipanti"
             >
@@ -180,13 +191,36 @@ export function CreateGameWizard({
             <button
               type="button"
               className="btn btn-gold px-4"
-              onClick={() => setPlayerCount((n) => Math.min(15, n + 1))}
+              onClick={() => setCount(Math.min(15, playerCount + 1))}
               disabled={playerCount >= 15}
               aria-label="Aumenta partecipanti"
             >
               <Plus size={16} />
             </button>
             <span className="text-base text-parchment-400 italic">da 3 a 15 ospiti</span>
+          </div>
+        </div>
+
+        <div>
+          <label className="label">Nomi dei partecipanti (opzionale, consigliato)</label>
+          <p className="mb-3 text-base text-parchment-400 italic">
+            Inserendo i nomi, l'AI creerà una scheda su misura per ciascuno e basterà selezionare
+            il proprio nome al momento dell'ingresso per riceverla. Lascia vuoto per l'assegnazione libera.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {participantNames.map((value, i) => (
+              <input
+                key={i}
+                className="input py-2"
+                value={value}
+                onChange={(e) =>
+                  setParticipantNames((prev) => prev.map((v, j) => (j === i ? e.target.value : v)))
+                }
+                placeholder={`Partecipante ${i + 1}`}
+                maxLength={24}
+                autoComplete="off"
+              />
+            ))}
           </div>
         </div>
 

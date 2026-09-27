@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { Crown, LoaderCircle, Skull, Users } from "lucide-react";
-import { joinRoom } from "../services/roomService";
+import { getJoinInfo, joinRoom } from "../services/roomService";
 import { NoticeBanner, OrnamentDivider } from "../components/ui";
 import { CreateGameWizard } from "./CreateGameWizard";
+import { cn } from "../utils";
 
 export function HomeView({
   uid,
@@ -15,24 +16,20 @@ export function HomeView({
   onHost: (code: string, name: string) => void;
   onJoin: (code: string, name: string) => void;
 }) {
-  const [mode, setMode] = useState<"menu" | "create" | "join">("menu");
+  const [mode, setMode] = useState<"menu" | "create" | "join" | "pick-name">("menu");
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
+  const [freeNames, setFreeNames] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleJoin = async (e: FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    const cleanName = name.trim();
-    const cleanCode = code.trim().toUpperCase();
-    if (!cleanName) return setError("Inserisci il tuo nome per la serata.");
-    if (cleanCode.length !== 6) return setError("Il codice stanza è di 6 caratteri.");
+  const doJoin = async (chosenName: string, chosenCode: string) => {
     setBusy(true);
+    setError(null);
     try {
-      const result = await joinRoom(cleanCode, uid, cleanName);
+      const result = await joinRoom(chosenCode, uid, chosenName);
       if (!result.ok) setError(result.error);
-      else onJoin(cleanCode, cleanName);
+      else onJoin(chosenCode, chosenName);
     } catch {
       setError("Errore di connessione a Firebase. Riprova.");
     } finally {
@@ -40,8 +37,107 @@ export function HomeView({
     }
   };
 
+  const handleJoin = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    const cleanCode = code.trim().toUpperCase();
+    if (cleanCode.length !== 6) return setError("Il codice stanza è di 6 caratteri.");
+    setBusy(true);
+    try {
+      // Pre-check: la stanza esiste e prevede la selezione del nome?
+      const info = await getJoinInfo(cleanCode);
+      if (!info.ok) {
+        setError(info.error);
+        setBusy(false);
+        return;
+      }
+      setCode(cleanCode);
+      if (info.requirePick) {
+        setFreeNames(info.freeNames);
+        if (info.freeNames.length === 0) {
+          setError("Tutti i partecipanti previsti sono già entrati nella stanza.");
+          setBusy(false);
+          return;
+        }
+        setMode("pick-name");
+        setBusy(false);
+        return;
+      }
+      if (!name.trim()) {
+        setBusy(false);
+        return setError("Inserisci il tuo nome per la serata.");
+      }
+      await doJoin(name.trim(), cleanCode);
+    } catch {
+      setError("Errore di connessione a Firebase. Riprova.");
+      setBusy(false);
+    }
+  };
+
+  const handleConfirmName = (e: FormEvent) => {
+    e.preventDefault();
+    if (!name) return setError("Seleziona il tuo nome.");
+    void doJoin(name, code);
+  };
+
   if (mode === "create") {
     return <CreateGameWizard uid={uid} onCreated={(c, n) => onHost(c, n)} onCancel={() => setMode("menu")} />;
+  }
+
+  if (mode === "pick-name") {
+    return (
+      <div className="flex min-h-full flex-col items-center justify-center px-4 py-12">
+        <form
+          onSubmit={handleConfirmName}
+          className="noir-card animate-fade-up w-full max-w-md space-y-5 p-6"
+        >
+          <div className="text-center">
+            <p className="font-display text-xs tracking-[0.3em] text-gold-400 uppercase">
+              Stanza {code}
+            </p>
+            <h2 className="mt-2 font-display text-2xl tracking-[0.1em] text-gold-300 uppercase">
+              Chi sei stasera?
+            </h2>
+            <p className="mt-2 text-lg text-parchment-400 italic">
+              Seleziona il tuo nome: la tua scheda segreta è già stata preparata su misura per te.
+            </p>
+          </div>
+          {error && <NoticeBanner text={error} />}
+          <div className="grid gap-2">
+            {freeNames.map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setName(n)}
+                className={cn(
+                  "cursor-pointer rounded border px-4 py-3 text-left text-lg transition-all",
+                  name === n
+                    ? "border-gold-500 bg-gold-500/15 text-gold-300"
+                    : "border-gold-700/25 bg-ink-850/60 text-parchment-100 hover:border-gold-500/50",
+                )}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          <button type="submit" disabled={busy || !name} className="btn btn-gold w-full">
+            {busy ? <LoaderCircle className="animate-spin" size={16} /> : <Users size={16} />}
+            {busy ? "Valico le porte..." : "Ricevi la tua scheda"}
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost w-full"
+            onClick={() => {
+              setMode("join");
+              setName("");
+              setError(null);
+            }}
+          >
+            Torna indietro
+          </button>
+        </form>
+      </div>
+    );
   }
 
   return (
@@ -51,7 +147,7 @@ export function HomeView({
         <div className="animate-fade-up text-center">
           <Skull className="animate-flicker mx-auto mb-5 text-blood-500" size={56} strokeWidth={1.4} />
           <h1 className="font-display text-4xl leading-tight tracking-[0.12em] text-gold-300 uppercase sm:text-5xl">
-            Cena con
+            Serata con
             <br />
             Delitto
           </h1>

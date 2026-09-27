@@ -45,6 +45,26 @@ export async function createRoom(settings: RoomSettings, hostUid: string, hostNa
 
 export type JoinResult = { ok: true } | { ok: false; error: string };
 
+/**
+ * Pre-check del codice stanza: verifica che esista e sia aperta, e ritorna
+ * i nomi dei partecipanti ancora disponibili (se l'host li ha configurati).
+ */
+export async function getJoinInfo(
+  code: string,
+): Promise<{ ok: true; freeNames: string[]; requirePick: boolean } | { ok: false; error: string }> {
+  const snap = await get(ref(db, `rooms/${code}`));
+  if (!snap.exists()) return { ok: false, error: "Stanza non trovata. Controlla il codice." };
+  const room = snap.val() as Room;
+  const status = room.meta?.status;
+  if (status !== "LOBBY" && status !== "ASSIGNMENT") {
+    return { ok: false, error: "La partita è già iniziata o è terminata." };
+  }
+  const taken = new Set(Object.values(room.players ?? {}).map((p) => p.name.toLowerCase()));
+  const all = room.settings?.participantNames ?? [];
+  const freeNames = all.filter((n) => !taken.has(n.toLowerCase()));
+  return { ok: true, freeNames, requirePick: all.length > 0 };
+}
+
 /** Unisce un giocatore alla stanza (solo in LOBBY o ASSIGNMENT). */
 export async function joinRoom(code: string, uid: string, name: string): Promise<JoinResult> {
   const snap = await get(ref(db, `rooms/${code}`));
@@ -61,7 +81,23 @@ export async function joinRoom(code: string, uid: string, name: string): Promise
     isHost: false,
     isOnline: true,
     lastSeen: Date.now(),
+    joinedAt: Date.now(),
   });
+
+  // Assegnazione automatica: se l'host ha configurato i nomi dei partecipanti,
+  // chi sceglie il proprio nome riceve immediatamente la propria scheda.
+  const match = Object.values(room.characters ?? {}).find(
+    (c) =>
+      !c.assignedToPlayerId &&
+      (c.assignedPlayerName ?? "").toLowerCase() === name.toLowerCase() &&
+      !existing?.characterId,
+  );
+  if (match) {
+    await update(ref(db, `rooms/${code}`), {
+      [`characters/${match.id}/assignedToPlayerId`]: uid,
+      [`players/${uid}/characterId`]: match.id,
+    });
+  }
   return { ok: true };
 }
 
@@ -106,6 +142,30 @@ export async function generateStoryForRoom(code: string, settings: RoomSettings)
       currentRound: 0,
       totalRounds: Object.keys(rounds).length,
     });
+
+    // Pre-assegnazione per nome: se l'host ha inserito i nomi dei partecipanti,
+    // ogni personaggio è riservato al giocatore con quel nome (e chi è già
+    // entrato in stanza riceve la scheda all'istante).
+    const names = (settings.participantNames ?? []).map((n) => n.trim()).filter(Boolean);
+    const charList = Object.values(characters);
+    if (names.length === charList.length && names.length > 0) {
+      const updates: Record<string, unknown> = {};
+      charList.forEach((c, i) => {
+        if (!c.assignedToPlayerId) updates[`characters/${c.id}/assignedPlayerName`] = names[i];
+      });
+      const roomSnap = await get(ref(db, `rooms/${code}`));
+      const current = roomSnap.val() as Room;
+      for (const [uid, p] of Object.entries(current.players ?? {})) {
+        const idx = names.findIndex((n) => n.toLowerCase() === p.name.toLowerCase());
+        const c = idx >= 0 ? charList[idx] : undefined;
+        if (c && !c.assignedToPlayerId && !p.characterId) {
+          updates[`characters/${c.id}/assignedToPlayerId`] = uid;
+          updates[`characters/${c.id}/assignedPlayerName`] = p.name;
+          updates[`players/${uid}/characterId`] = c.id;
+        }
+      }
+      await applyAssignments(code, updates);
+    }
     return usedFallback;
   } catch (err) {
     await update(ref(db, `rooms/${code}/meta`), { status: "LOBBY" }).catch(() => {});

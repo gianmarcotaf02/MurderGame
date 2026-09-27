@@ -36,7 +36,7 @@ export function Navbar({
         <div className="mx-auto flex w-full max-w-4xl items-center gap-2 px-4 py-3 sm:gap-3">
           <div className="min-w-0 flex-1">
             <p className="truncate font-display text-sm tracking-[0.16em] text-gold-300 uppercase">
-              {room.settings.title || "Cena con Delitto"}
+              {room.settings.title || "Serata con Delitto"}
             </p>
             <p className="flex items-center gap-2 text-sm text-parchment-400">
               {STATUS_LABELS[room.meta.status]}

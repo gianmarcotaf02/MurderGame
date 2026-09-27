@@ -64,7 +64,7 @@ export function PlayerDashboard({ room, session }: { room: Room; session: Sessio
             <ScrollText size={13} className="mr-1.5 inline" /> Indizi Ricevuti
           </SectionTitle>
 
-          {/* Prologo e vittima: sempre visibili */}
+          {/* Prologo, vittima e regole: sempre visibili */}
           {room.story && (
             <div className="noir-card space-y-4 p-5">
               <p className="font-display text-xs tracking-[0.25em] text-gold-400 uppercase">
@@ -80,6 +80,24 @@ export function PlayerDashboard({ room, session }: { room: Room; session: Sessio
                 <p className="mt-1 text-base leading-relaxed text-parchment-300">
                   {room.story.victim.causeOfDeath}
                 </p>
+              </div>
+              <OrnamentDivider />
+              <div>
+                <p className="mb-2 font-display text-xs tracking-[0.25em] text-gold-400 uppercase">
+                  Regole della serata
+                </p>
+                <ul className="list-disc space-y-1 pl-5 text-base leading-relaxed text-parchment-300">
+                  <li>Niente costumi, niente recitazione: solo conversazione, alibi e logica.</li>
+                  <li>
+                    <span className="text-blood-300">Solo il colpevole</span> può mentire
+                    spudoratamente su alibi e orari.
+                  </li>
+                  <li>
+                    Gli innocenti dicono la verità se messi alle strette, ma nascondono i propri
+                    segreti per non finire nei guai.
+                  </li>
+                  <li>Le schede restano segrete: mostra i contenuti solo se messo alle strette.</li>
+                </ul>
               </div>
             </div>
           )}

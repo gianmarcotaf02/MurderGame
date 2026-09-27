@@ -271,7 +271,7 @@ function AssignmentSection({ room, session }: { room: Room; session: Session }) 
 
                 {taken && char.assignedPlayerName && !isMine && (
                   <p className="mt-2 flex items-center gap-1.5 text-sm text-parchment-400">
-                    <UserRound size={13} /> {char.assignedPlayerName}
+                    <UserRound size={13} /> Riservato a: {char.assignedPlayerName}
                   </p>
                 )}
 

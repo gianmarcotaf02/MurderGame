@@ -84,7 +84,7 @@ export function AccusationView({ room, session }: { room: Room; session: Session
           </div>
           <div>
             <label className="label" htmlFor="motive">
-              Motivazione dell'accusa
+              Come l'ha fatto e perché
             </label>
             <textarea
               id="motive"
@@ -92,7 +92,7 @@ export function AccusationView({ room, session }: { room: Room; session: Session
               rows={3}
               value={motive}
               onChange={(e) => setMotive(e.target.value)}
-              placeholder="Es. La sua finestra era accesa a quell'ora impossibile..."
+              placeholder="Es. Ha usato la chiave rubata del maggiordomo per entrare alle 2:41, perché la vittima stava per denunciarlo..."
               maxLength={300}
             />
           </div>

@@ -1,4 +1,4 @@
-# 🗡️ Cena con Delitto — Murder Mystery Party Live
+# 🗡️ Serata con Delitto — Murder Mystery Party Live
 
 WebApp per organizzare ed eseguire **"Cene con Delitto"** (murder mystery party) dal vivo con gli amici: un Game Master configura la serata, un'AI (Google Gemini) genera trama, personaggi, alibi, segreti e indizi a rilascio progressivo, e i giocatori si uniscono da smartphone con un codice stanza a 6 caratteri (o QR Code).
 
@@ -40,7 +40,7 @@ cp .env.example .env   # poi compila .env come descritto sotto
 ### 3. Crea il progetto Firebase
 
 1. Vai su [console.firebase.google.com](https://console.firebase.google.com) e clicca **Aggiungi progetto**.
-   - Nome: es. `cena-con-delitto` — Google Analytics: **disattivalo** (non serve).
+   - Nome: es. `serata-con-delitto` — Google Analytics: **disattivalo** (non serve).
 2. **Registra una Web App**:
    - Nella panoramica del progetto, clicca sull'icona **`</>`** (Web).
    - Nickname: `murdergame-web` — **NON** attivare Firebase Hosting (usiamo Vercel).
@@ -75,10 +75,10 @@ cp .env.example .env   # poi compila .env come descritto sotto
 
 ```env
 VITE_FIREBASE_API_KEY=AIza...
-VITE_FIREBASE_AUTH_DOMAIN=cena-con-delitto.firebaseapp.com
-VITE_FIREBASE_DATABASE_URL=https://cena-con-delitto-default-rtdb.europe-west1.firebasedatabase.app
-VITE_FIREBASE_PROJECT_ID=cena-con-delitto
-VITE_FIREBASE_STORAGE_BUCKET=cena-con-delitto.firebasestorage.app
+VITE_FIREBASE_AUTH_DOMAIN=serata-con-delitto.firebaseapp.com
+VITE_FIREBASE_DATABASE_URL=https://serata-con-delitto-default-rtdb.europe-west1.firebasedatabase.app
+VITE_FIREBASE_PROJECT_ID=serata-con-delitto
+VITE_FIREBASE_STORAGE_BUCKET=serata-con-delitto.firebasestorage.app
 VITE_FIREBASE_MESSAGING_SENDER_ID=123456789012
 VITE_FIREBASE_APP_ID=1:123456789012:web:abcdef123456
 VITE_GEMINI_API_KEY=AIza...
@@ -104,7 +104,7 @@ Apri `http://localhost:5173` sul PC (Game Master) e sul telefono (giocatori, ste
 
 1. **Push su GitHub**:
    ```bash
-   git init && git add . && git commit -m "Cena con Delitto"
+   git init && git add . && git commit -m "Serata con Delitto"
    git branch -M main
    git remote add origin https://github.com/<tuo-user>/murdergame.git
    git push -u origin main

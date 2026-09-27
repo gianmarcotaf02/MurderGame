@@ -8,6 +8,8 @@ export interface GeneratedCharacter {
   relationshipWithVictim: string;
   secrets: string[];
   alibi: string;
+  observations: string[];
+  questions: string[];
 }
 
 export interface GeneratedRound {
@@ -36,56 +38,78 @@ const MODEL = "gemini-2.0-flash";
 
 function buildPrompt(settings: RoomSettings): string {
   const n = settings.playerCount;
-  return `Sei un maestro di giochi esperto nella creazione di murder mystery party ("cene con delitto") in italiano, da interpretare dal vivo con gli amici.
-Genera un caso d'investigazione COMPLETO, originale, coerente e avvincente, con una logica a prova di bomba ("ironclad logic").
+  const names = (settings.participantNames ?? []).map((x) => x.trim()).filter(Boolean);
+  const namesBlock =
+    names.length === n
+      ? `
+- I personaggi sono interpretati dai seguenti partecipanti REALI: ${names
+          .map((x) => `"${x}"`)
+          .join(", ")}.
+  * Usa i loro nomi ESATTAMENTE come campo "name" di ciascun personaggio (uno a uno, nello stesso ordine in cui li hai elencati).
+  * Adatta ruoli, legami e segreti a chi li interpreta, coerentemente con i vincoli dell'organizzatore.`
+      : "";
+  return `Sei un game designer specializzato in giochi investigativi e Murder Mystery da tavolo/salotto, in italiano.
+Progetta un caso per un gioco "zero sbatti": NIENTE dress-code, NIENTE costumi, NIENTE descrizioni fisiche o interpretazione teatrale.
+Il gioco si regge interamente su conversazione, alibi incrociati, bluff e logica deduttiva.
+Formato senza narratore esterno: tutti giocano un personaggio; il colpevole mente per salvarsi, gli altri dicono la verità ma proteggono i propri segreti.
 
 Rispondi ESCLUSIVAMENTE con un oggetto JSON valido, senza testo fuori dal JSON, conforme a questo schema:
 {
   "title": "titolo evocativo del mistero",
-  "prologue": "incipit narrativo: chi è la vittima, dove e quando avviene il delitto, perché tutti gli invitati sono presenti (3-5 frasi)",
+  "prologue": "premessa rapida da leggere a inizio serata (max 15 righe): chi è la vittima, dove si trovano tutti, quando è avvenuto il delitto",
   "victim": {
     "name": "nome della vittima",
-    "age": 58,
-    "occupation": "professione o titolo della vittima",
-    "causeOfDeath": "dettaglio della morte come appare alla scoperta del corpo (1-2 frasi)",
+    "age": 45,
+    "occupation": "professione o ruolo della vittima",
+    "causeOfDeath": "dettaglio della morte come appare alla scoperta (1-2 frasi)",
     "isSuicideOrAccident": false
   },
-  "truth": "spiegazione inequivocabile dell'accaduto: cronologia precisa degli eventi, arma, movente reale e confutazione di ogni falso alibi (4-6 frasi)",
+  "truth": "busta della soluzione: nome del colpevole, cronologia reale degli eventi MINUTO PER MINUTO e la 'prova schiacciante': l'incongruenza logica precisa che smonta matematicamente l'alibi dell'assassino (5-8 frasi)",
   "culpritCharacterId": "char_X (esattamente uno dei personaggi)",
   "characters": [
     {
       "id": "char_1",
-      "name": "nome completo del personaggio",
-      "role": "archetipo breve, es. 'L'ereditiera decaduta'",
-      "publicBio": "cosa tutti gli ospiti vedono e sanno di lui/lei all'inizio della serata (1-2 frasi)",
-      "relationshipWithVictim": "rapporto con la vittima, con una tensione o un'ombra (1-2 frasi)",
-      "secrets": ["segreto inconfessabile o movente", "secondo segreto"],
-      "alibi": "cosa dichiara di aver fatto al momento della morte"
+      "name": "nome del personaggio",
+      "role": "legame con la vittima o ruolo breve, es. 'L'ex collega che non l'ha mai perdonata'",
+      "publicBio": "cosa tutti gli altri sanno di lui/lei (1-2 frasi)",
+      "relationshipWithVictim": "il movente potenziale: perché la vittima lo/la danneggiava, minacciava o umiliava (1-2 frasi)",
+      "secrets": ["il segreto inconfessabile: NON c'entra con l'omicidio, ma è il motivo per cui è agitato/a e reticente"],
+      "alibi": "versione pubblica: cosa dichiara di aver fatto nelle ultime 2 ore prima del ritrovamento del corpo",
+      "observations": ["un dettaglio scomodo che ha visto o sentito su un ALTRO giocatore (indicalo per nome)"],
+      "questions": ["domanda investigativa specifica da fare a bruciapelo a un altro partecipante", "seconda domanda a bruciapelo rivolta a un altro partecipante diverso"]
     }
   ],
   "rounds": [
     {
-      "title": "Atto I: <sottotitolo evocativo>",
-      "globalClue": "indizio pubblico rivelato a tutti gli invitati (1-2 frasi)",
-      "privateClues": { "char_1": "indizio personale riservato a char_1", "char_2": "...", ... }
+      "title": "Fase 1: Il Giro degli Alibi",
+      "globalClue": "testo di regia per la fase: nessun reperto ancora, si dichiarano gli alibi e iniziano i primi attriti (1-2 frasi di istruzioni)",
+      "privateClues": { "char_1": "promemoria privato: un dettaglio del TUO alibi da rafforzare o una tensione da nascondere in questa fase" }
+    },
+    {
+      "title": "Fase 2: Il Rilascio dei Reperti",
+      "globalClue": "il reperto materiale principale (testo PRONTO da condividere via chat o foglietto: cronologia messaggi, scontrino con orario e luogo, appunto, referto con orario di morte). Deve smentire apertamente la versione di 2-3 giocatori",
+      "privateClues": { "char_1": "ulteriore reperto o dettaglio riservato: forza il giocatore a precisare o contraddice il suo alibi" }
+    },
+    {
+      "title": "Fase 3: Il Confronto Finale",
+      "globalClue": "l'ultimo elemento decisivo (smoking gun): il dettaglio che smonta l'alibi principale e apre il confronto finale",
+      "privateClues": { "char_1": "istruzione riservata per il confronto finale: cosa ammettere, cosa negare, cosa giocarsi" }
     }
   ]
 }
 
 VINCOLI IMPERATIVI:
-- Esattamente ${n} personaggi, con id "char_1" ... "char_${n}".
-- Uno solo è il colpevole (culpritCharacterId). TUTTI i personaggi devono avere motivi plausibili per essere sospettati (depistaggi), ma solo gli indizi reali devono convergere incontrovertibilmente verso la soluzione.
-- Il falso alibi principale deve essere smontabile da un indizio preciso.
-- Esattamente 3 round; ogni round ha un globalClue e un privateClue per OGNI personaggio (chiavi = id dei personaggi).
-- Bilanciamento degli indizi nei round:
-  * Round 1: indizi ambientali, relazioni iniziali, moventi superficiali.
-  * Round 2: contraddizioni negli alibi, prove fisiche nascoste, segreti parzialmente svelati.
-  * Round 3: la prova decisiva (smoking gun) e l'elemento che smonta il falso alibi principale.
-- I privateClues devono dare a ogni giocatore un pezzo unico del puzzle: indizi che si completano a vicenda tra i giocatori.
-- Tono: ${settings.tone}. Ambientazione: ${settings.setting}. Complessità del mistero: ${settings.complexity}.
-- L'organizzatore ammette colpi di scena come suicidio simulato o incidente insabbiato: ${settings.allowSuicideOrAccident ? "SÌ, puoi strutturare facoltativamente un caso dove non c'è omicidio volontario (es. suicidio fatto apparire come delitto per incastrare un rivale, o incidente coperto per paura)" : "NO, deve trattarsi di un omicidio volontario"}.
+- Esattamente ${n} personaggi, con id "char_1" ... "char_${n}".${namesBlock}
+- Uno solo è il colpevole (culpritCharacterId). TUTTI hanno un movente plausibile, ma solo gli indizi reali convergono incontrovertibilmente verso la soluzione.
+- Solo il colpevole può mentire spudoratamente su alibi e orari; gli innocenti dicono la verità se messi alle strette ma hanno segreti da proteggere.
+- I segreti inconfessabili NON sono la soluzione del delitto: creano imbarazzo e sospetto, niente di più.
+- Ogni personaggio ha UNA observation su un altro giocatore e DUE domande a bruciapelo rivolte a due partecipanti DIVERSI: sono il carburante della conversazione.
+- Esattamente 3 fasi/round; ogni round ha un globalClue e un privateClue per OGNI personaggio (chiavi = id dei personaggi).
+- Il globalClue della Fase 2 deve essere un reperto materiale PRONTO DA CONDIVIDERE via chat o foglietto (testo breve, concreto, con orari precisi).
+- Tono: ${settings.tone}. Ambientazione: ${settings.setting}. Complessità: ${settings.complexity}.
+- Colpi di scena suicidio simulato/incidente ammessi: ${settings.allowSuicideOrAccident ? "SÌ, puoi usarli se rendono il caso migliore" : "NO, deve essere un omicidio volontario"}.
 ${settings.customNotes ? `- Note e vincoli speciali dell'organizzatore (OBBLIGATORI): ${settings.customNotes}` : ""}
-- Scrivi tutto in italiano, con prosa evocativa ma concisa (massimo 2-3 frasi per campo).`;
+- Scrivi tutto in italiano, prosa concisa e funzionale: le schede devono restare "di mezza pagina", puramente giocabili.`;
 }
 
 /** Ripulisce l'output AI da eventuali backtick o testo extra e restituisce JSON puro. */
@@ -108,6 +132,14 @@ function validateStory(story: GeneratedStory, n: number): GeneratedStory {
   }
   if (!story.characters.some((c) => c.id === story.culpritCharacterId)) {
     throw new Error("Colpevole non valido");
+  }
+  // Normalizza i campi opzionali del nuovo formato
+  for (const c of story.characters) {
+    if (!Array.isArray(c.observations)) c.observations = [];
+    if (!Array.isArray(c.questions)) c.questions = [];
+    if (!Array.isArray(c.secrets) || c.secrets.length === 0) {
+      c.secrets = ["Un segreto che preferiresti non svelare."];
+    }
   }
   return story;
 }
@@ -195,8 +227,18 @@ const ALIBIS = [
   "Sostiene di essere andato/a a letto presto; la candela della sua camera, però, era ancora accesa.",
   "Afferma di aver preparato la cioccolata calda in cucina, ma il cuoco era già andato via.",
 ];
+const OBSERVATIONS = [
+  "Hai visto {ALTRO} uscire dallo studio in fretta, poco prima della scoperta del corpo.",
+  "{ALTRO} ha mentito sul proprio orario: ha detto di essere in giardino, ma l'hai incontrato/a in corridoio alle 2:30.",
+  "Hai notato {ALTRO} nascondere qualcosa in una tasca mentre tutti accorrevano verso lo studio.",
+];
+const QUESTIONS = [
+  "{ALTRO}: perché la tua candela era ancora accesa, se dici di essere a letto dalle 2:00?",
+  "{ALTRO}: chi ti ha visto tra le 2:00 e le 3:00, esattamente?",
+  "{ALTRO}: cosa discutevate a voce bassa in serra, prima di cena?",
+];
 
-const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
 const shuffle = <T,>(arr: T[]): T[] => {
   const copy = [...arr];
   for (let i = copy.length - 1; i > 0; i--) {
@@ -209,16 +251,28 @@ const shuffle = <T,>(arr: T[]): T[] => {
 export function generateFallbackStory(settings: RoomSettings): GeneratedStory {
   const n = settings.playerCount;
   const culpritIndex = Math.floor(Math.random() * n);
+  const names = (settings.participantNames ?? []).map((x) => x.trim()).filter(Boolean);
 
-  const characters: GeneratedCharacter[] = Array.from({ length: n }, (_, i) => ({
-    id: `char_${i + 1}`,
-    name: NAMES[i % NAMES.length],
-    role: ROLES[i % ROLES.length],
-    publicBio: BIOS[i % BIOS.length],
-    relationshipWithVictim: RELATIONS[i % RELATIONS.length],
-    secrets: [SECRETS[i % SECRETS.length], pick(SECRETS)],
-    alibi: ALIBIS[i % ALIBIS.length],
-  }));
+  const characters: GeneratedCharacter[] = Array.from({ length: n }, (_, i) => {
+    const other = names.length === n ? names[(i + 1) % n] : NAMES[(i + 1) % NAMES.length].split(" ")[0];
+    return {
+      id: `char_${i + 1}`,
+      name: names.length === n ? names[i] : NAMES[i % NAMES.length],
+      role: ROLES[i % ROLES.length],
+      publicBio: BIOS[i % BIOS.length],
+      relationshipWithVictim: RELATIONS[i % RELATIONS.length],
+      secrets: [SECRETS[i % SECRETS.length]],
+      alibi: ALIBIS[i % ALIBIS.length],
+      observations: [OBSERVATIONS[i % OBSERVATIONS.length].replace("{ALTRO}", other)],
+      questions: [
+        QUESTIONS[i % QUESTIONS.length].replace("{ALTRO}", other),
+        QUESTIONS[(i + 1) % QUESTIONS.length].replace(
+          "{ALTRO}",
+          names.length === n ? names[(i + 2) % n] : NAMES[(i + 2) % NAMES.length].split(" ")[0],
+        ),
+      ],
+    };
+  });
 
   const culprit = characters[culpritIndex];
   const victimName = "Sir Reginald Ashworth";
@@ -227,38 +281,39 @@ export function generateFallbackStory(settings: RoomSettings): GeneratedStory {
 
   const rounds: GeneratedRound[] = [
     {
-      title: "Atto I: La Scoperta del Corpo",
-      globalClue: `Il corpo di ${victimName} è stato trovato nello studio, la finestra aperta e la cassaforte intatta. Sul tappeto, un'impronta di scarpa piccola, quasi cancellata.`,
+      title: "Fase 1: Il Giro degli Alibi",
+      globalClue:
+        "Nessun reperto, per ora. Ciascuno dichiari dove si trovava tra le 1:30 e le 3:00: partiamo dagli attriti, non dai sospetti.",
       privateClues: Object.fromEntries(
-        shuffle(characters).map((c, i) => [
+        characters.map((c, i) => [
           c.id,
           i === culpritIndex
-            ? "Sai che nessuno può confermare il tuo alibi: eri esattamente dove non dovevi essere. Occorre deviare i sospetti."
-            : "Hai sentito uno scricchiolio di legno dietro la porta dello studio verso mezzanotte, ma hai avuto troppa paura di guardare.",
+            ? "Nessuno può confermare il tuo alibi: eri esattamente dove non dovevi essere. Rafforza la tua versione e devia i sospetti."
+            : "Un dettaglio del tuo alibi è debole: chiudilo prima che qualcuno lo noti, e proteggi il tuo segreto.",
         ]),
       ),
     },
     {
-      title: "Atto II: I Debiti del Passato",
-      globalClue: `Nel cestino dello studio, una lettera strappata: "Conosco ciò che hai fatto. Presto tutti lo sapranno." La calligrafia è elegante, difficile da attribuire.`,
+      title: "Fase 2: Il Rilascio dei Reperti",
+      globalClue: `REPERTO — Cronologia messaggi del telefono della vittima: alle 2:12 "Ti vedo tra dieci minuti, sei l'unica persona che sa tutto", alle 2:41 una chiamata interrotta verso lo studio. Il referto fissa la morte tra le 2:30 e le 3:00.`,
       privateClues: Object.fromEntries(
         shuffle(characters).map((c, i) => [
           c.id,
           i === culpritIndex
-            ? "La lettera non parla di te: sai chi l'ha scritta. Chiudi il cerchio prima che lo facciano gli altri."
-            : "Hai visto qualcuno uscire dallo studio con un foglio in mano. Il volto era in ombra, ma l'andatura ti è familiare.",
+            ? "Il messaggio delle 2:12 era per te. Devi spiegare il contenuto senza confessare il delitto: giocati il tutto per tutto."
+            : "Sei stato/a visto/a vicino allo studio nell'ora fatale: preparati a spiegare il tuo passaggio con precisione.",
         ]),
       ),
     },
     {
-      title: "Atto III: La Verità in Agguato",
-      globalClue: `L'orologio da taschino della vittima si è fermato alle 2:47. Il medico conferma che l'ora della morte è compatibile. Quell'orario, per qualcuno, è un problema serio.`,
+      title: "Fase 3: Il Confronto Finale",
+      globalClue: `REPERTO FINALE — Sul davanzale dello studio, una imprinta di scarpa taglia 38 con una crepa suola; il tappeto porta un secondo filo di lana grigia, identica a quella dell'abito di una persona presente. L'alibi principale non regge: è ora del confronto finale.`,
       privateClues: Object.fromEntries(
         shuffle(characters).map((c, i) => [
           c.id,
           i === culpritIndex
-            ? "È finita: gli indizi convergono su di te. Puoi solo sperare che l'accusa cada su un altro."
-            : `Un dettaglio dell'alibi di ${culprit.name} non torna. Sei pronto/a ad accusarlo davanti a tutti.`,
+            ? "È finita: gli indizi convergono su di te. Ammetti qualcosa di minore per coprire l'essenziale, o contrattacca accusando un altro."
+            : "Nel confronto finale gioca le tue osservazioni: chiedi spiegazioni precise e non mollare finché la versione regge.",
         ]),
       ),
     },
@@ -266,7 +321,7 @@ export function generateFallbackStory(settings: RoomSettings): GeneratedStory {
 
   return {
     title: settings.title || "Delitto alla Villa Nera",
-    prologue: `${victimName}, magnate senza eredi dichiarati, ha riunito ${n} ospiti a ${settingLine}. Alle 2:47 di notte, uno sparo inquieto fa accorrere tutti nello studio: ${victimName} giace senza vita. La tempesta ha bloccato ogni via d'uscita. Il colpevole è necessariamente uno di voi.`,
+    prologue: `${victimName}, magnate senza eredi dichiarati, ha riunito ${n} ospiti a ${settingLine}. Alle 2:47 di notte, uno sparo fa accorrere tutti nello studio: ${victimName} giace senza vita. La tempesta ha bloccato ogni via d'uscita. Il colpevole è necessariamente uno di voi. Regole: solo il colpevole può mentire su alibi e orari; gli innocenti dicono la verità se messi alle strette, ma proteggeranno i propri segreti.`,
     victim: {
       name: victimName,
       age: 58,
@@ -275,8 +330,8 @@ export function generateFallbackStory(settings: RoomSettings): GeneratedStory {
       isSuicideOrAccident: isTwist,
     },
     truth: isTwist
-      ? `La verità è più strana dell'omicidio: ${victimName} aveva inscenato la propria morte per sfuggire ai creditori, ma ${culprit.name} (${culprit.role}) l'ha sorpreso durante la messinscena e ne ha approfittato per compiere il delitto davvero, facendolo passare per farsa. Gli indizi del II e III Atto confermano la sua presenza nello studio all'ora fatale.`
-      : `L'assassino è ${culprit.name} (${culprit.role}). Motivo: ${culprit.relationshipWithVictim} Ha agito alle 2:47, sfruttando l'orario in cui gli alibi degli altri erano solo apparenti. L'impronta sul tappeto e la lettera strappata lo indicano senza riserve: ${culprit.secrets[0]}`,
+      ? `CRONOLOGIA — 2:05 ${culprit.name} sale allo studio; 2:12 la vittima scrive il messaggio; 2:20 la vittima, che aveva inscenato la propria morte per sfuggire ai creditori, viene sorpresa da ${culprit.name} durante la messinscena; 2:47 il colpo. PROVA SCHIACCIANTE — ${culprit.name} dichiara di essere in biblioteca dalle 2:00, ma il messaggio delle 2:12 era indirizzato a lui/lei e la fibra grigia sul tappeto corrisponde al suo abito: l'alibi è matematicamente impossibile.`
+      : `CRONOLOGIA — 2:12 la vittima scrive il messaggio "sei l'unica persona che sa tutto"; 2:30 la chiamata interrotta; 2:41 ${culprit.name} entra nello studio con la chiave rubata al maggiordomo; 2:47 il colpo; 2:55 ${culprit.name} ripassa dal corridoio nord (l'impronta sul davanzale). PROVA SCHIACCIANTE — ${culprit.name} dichiara di essere in biblioteca dalle 2:00, ma la biblioteca è al piano di sotto e lo studio al primo: chi scrive alle 2:12 di incontrare qualcuno "tra dieci minuti" lì sopra non poteva non essere ${culprit.name}. L'alibi è matematicamente impossibile.`,
     culpritCharacterId: culprit.id,
     characters,
     rounds,
