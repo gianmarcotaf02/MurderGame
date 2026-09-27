@@ -20,6 +20,7 @@ export interface Victim {
   name: string;
   age: number;
   occupation: string;
+  personality: string;
   causeOfDeath: string;
   isSuicideOrAccident: boolean;
 }
@@ -34,6 +35,7 @@ export interface Character {
   alibi: string;
   observations: string[];
   questions: string[];
+  answers: string[];
   assignedToPlayerId: string | null;
   assignedPlayerName: string | null;
 }
@@ -42,6 +44,7 @@ export interface Round {
   title: string;
   globalClue: string;
   privateClues: Record<string, string>;
+  evidence?: string[];
 }
 
 export interface Story {
@@ -60,6 +63,7 @@ export interface RoomSettings {
   playerCount: number;
   customNotes: string;
   participantNames: string[];
+  externalNarrator: boolean;
 }
 
 export interface RoomMeta {

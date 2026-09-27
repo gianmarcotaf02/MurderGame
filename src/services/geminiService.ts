@@ -10,12 +10,14 @@ export interface GeneratedCharacter {
   alibi: string;
   observations: string[];
   questions: string[];
+  answers: string[];
 }
 
 export interface GeneratedRound {
   title: string;
   globalClue: string;
   privateClues: Record<string, string>;
+  evidence?: string[];
 }
 
 export interface GeneratedStory {
@@ -25,6 +27,7 @@ export interface GeneratedStory {
     name: string;
     age: number;
     occupation: string;
+    personality: string;
     causeOfDeath: string;
     isSuicideOrAccident: boolean;
   };
@@ -48,10 +51,14 @@ function buildPrompt(settings: RoomSettings): string {
   * Usa i loro nomi ESATTAMENTE come campo "name" di ciascun personaggio (uno a uno, nello stesso ordine in cui li hai elencati).
   * Adatta ruoli, legami e segreti a chi li interpreta, coerentemente con i vincoli dell'organizzatore.`
       : "";
+  const narratorBlock = settings.externalNarrator
+    ? `
+- C'è un NARRATORE ESTERNO (il Game Master): introduce le fasi, legge i reperti a voce o li condivide in chat, e guida la serata. I globalClue e i reperti sono scritti come testo DA LEGGERE AD ALTA VOCE dal narratore; prologo e regole si aprono con la voce del narratore che spiega che lui/lei non interpreta nessun personaggio.`
+    : `
+- Formato senza narratore esterno: tutti giocano un personaggio; il colpevole mente per salvarsi, gli altri dicono la verità ma proteggono i propri segreti.`;
   return `Sei un game designer specializzato in giochi investigativi e Murder Mystery da tavolo/salotto, in italiano.
 Progetta un caso per un gioco "zero sbatti": NIENTE dress-code, NIENTE costumi, NIENTE descrizioni fisiche o interpretazione teatrale.
-Il gioco si regge interamente su conversazione, alibi incrociati, bluff e logica deduttiva.
-Formato senza narratore esterno: tutti giocano un personaggio; il colpevole mente per salvarsi, gli altri dicono la verità ma proteggono i propri segreti.
+Il gioco si regge interamente su conversazione, alibi incrociati, bluff e logica deduttiva.${narratorBlock}
 
 Rispondi ESCLUSIVAMENTE con un oggetto JSON valido, senza testo fuori dal JSON, conforme a questo schema:
 {
