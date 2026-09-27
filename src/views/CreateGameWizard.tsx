@@ -34,6 +34,7 @@ export function CreateGameWizard({
   const [playerCount, setPlayerCount] = useState(6);
   const [participantNames, setParticipantNames] = useState<string[]>(Array(6).fill(""));
   const [allowSuicideOrAccident, setAllowSuicideOrAccident] = useState(true);
+  const [externalNarrator, setExternalNarrator] = useState(true);
   const [customNotes, setCustomNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +62,7 @@ export function CreateGameWizard({
         playerCount,
         customNotes: customNotes.trim(),
         participantNames: participantNames.map((n) => n.trim()).filter(Boolean),
+        externalNarrator,
       };
       const code = await createRoom(settings, uid, hostName.trim());
       onCreated(code, hostName.trim() || "Game Master");
@@ -223,6 +225,22 @@ export function CreateGameWizard({
             ))}
           </div>
         </div>
+
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={externalNarrator}
+            onChange={(e) => setExternalNarrator(e.target.checked)}
+            className="mt-1.5 size-4 accent-blood-500"
+          />
+          <span className="text-lg text-parchment-200">
+            Con narratore esterno (Game Master)
+            <span className="block text-base text-parchment-400 italic">
+              Il GM introduce le fasi e legge i reperti a voce, senza interpretare un personaggio.
+              Deseleziona se tutti vogliono giocare un personaggio.
+            </span>
+          </span>
+        </label>
 
         <label className="flex cursor-pointer items-start gap-3">
           <input

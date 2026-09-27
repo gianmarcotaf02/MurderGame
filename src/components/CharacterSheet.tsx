@@ -1,4 +1,4 @@
-import { AlertTriangle, Eye, HelpCircle, UserRound } from "lucide-react";
+import { AlertTriangle, Eye, HelpCircle, ShieldQuestion, UserRound } from "lucide-react";
 import type { Character } from "../types";
 import { BlurReveal } from "./ui";
 
@@ -7,7 +7,13 @@ import { BlurReveal } from "./ui";
  * Versione pubblica, movente potenziale, segreto inconfessabile,
  * osservazioni sugli altri e domande a bruciapelo.
  */
-export function CharacterSheet({ char }: { char: Character }) {
+export function CharacterSheet({
+  char,
+  victimPersonality,
+}: {
+  char: Character;
+  victimPersonality?: string;
+}) {
   return (
     <div className="animate-fade-up space-y-6">
       <div className="noir-card p-5">
@@ -37,10 +43,21 @@ export function CharacterSheet({ char }: { char: Character }) {
         <div className="mb-3 flex items-center gap-2 text-gold-500">
           <UserRound size={18} />
           <span className="font-display text-xs tracking-[0.25em] uppercase">
-            Legame e Movente Potenziale
+            Il Morto, e il Vostro Rapporto
           </span>
         </div>
+        {victimPersonality && (
+          <p className="mb-3 text-lg leading-relaxed text-parchment-200">
+            <span className="font-display text-sm tracking-[0.18em] text-gold-400 uppercase">
+              Come era:{" "}
+            </span>
+            {victimPersonality}
+          </p>
+        )}
         <p className="text-lg leading-relaxed text-parchment-200">
+          <span className="font-display text-sm tracking-[0.18em] text-gold-400 uppercase">
+            Il vostro rapporto e il tuo movente:{" "}
+          </span>
           {char.relationshipWithVictim}
         </p>
         <p className="mt-2 text-base text-parchment-400 italic">
@@ -68,6 +85,27 @@ export function CharacterSheet({ char }: { char: Character }) {
           colpa sua — rivela solo se messo alle strette.
         </p>
       </div>
+
+      {char.answers.length > 0 && (
+        <div className="noir-card p-5">
+          <div className="mb-3 flex items-center gap-2 text-gold-500">
+            <ShieldQuestion size={18} />
+            <span className="font-display text-xs tracking-[0.25em] uppercase">
+              Le Tue Risposte Pronte
+            </span>
+          </div>
+          <ul className="space-y-3">
+            {char.answers.map((a, i) => (
+              <li key={i} className="text-lg leading-relaxed text-parchment-200">
+                <BlurReveal text={a} />
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-base text-parchment-400 italic">
+            Se gli altri ti lanciano le loro domande a bruciapelo, ecco come reggere il colpo.
+          </p>
+        </div>
+      )}
 
       {char.observations.length > 0 && (
         <div className="noir-card p-5">

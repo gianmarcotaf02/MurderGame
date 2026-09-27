@@ -12,6 +12,7 @@ import {
   startGame,
 } from "../services/roomService";
 import { NoticeBanner, OrnamentDivider, SectionTitle } from "../components/ui";
+import { CharacterSheet } from "../components/CharacterSheet";
 import { QRCodeModal } from "../components/QRCodeModal";
 import { cn } from "../utils";
 
@@ -232,16 +233,53 @@ function AssignmentSection({ room, session }: { room: Room; session: Session }) 
         </p>
       </div>
 
-      {!isHost && myChar && (
-        <div className="noir-card border-gold-500/50 p-5 text-center">
-          <p className="font-display text-xs tracking-[0.25em] text-gold-400 uppercase">
-            Il tuo personaggio
-          </p>
-          <p className="mt-1 font-display text-2xl text-parchment-100">{myChar.name}</p>
-          <p className="text-lg text-gold-400 italic">{myChar.role}</p>
-          <p className="mt-2 text-base text-parchment-400">
-            La scheda completa con i segreti sarà rivelata all'inizio della serata.
-          </p>
+      {!isHost && myChar && room.story && (
+        <div className="animate-fade-up space-y-6">
+          <div className="noir-card border-gold-500/50 p-5 text-center">
+            <p className="font-display text-xs tracking-[0.25em] text-gold-400 uppercase">
+              Il tuo personaggio — assegnato automaticamente dal tuo nome
+            </p>
+            <p className="mt-1 font-display text-2xl text-parchment-100">{myChar.name}</p>
+            <p className="text-lg text-gold-400 italic">{myChar.role}</p>
+          </div>
+
+          <div className="noir-card space-y-4 p-5">
+            <p className="font-display text-xs tracking-[0.25em] text-gold-400 uppercase">
+              Il Caso — tutto quello che devi sapere
+            </p>
+            <p className="text-lg leading-relaxed text-parchment-200">{room.story.prologue}</p>
+            <OrnamentDivider />
+            <div>
+              <p className="font-display text-lg text-parchment-100">
+                {room.story.victim.name}, {room.story.victim.age} anni
+              </p>
+              <p className="text-base text-gold-400 italic">{room.story.victim.occupation}</p>
+              {room.story.victim.personality && (
+                <p className="mt-1 text-base leading-relaxed text-parchment-300">
+                  <span className="text-gold-400">Com'era: </span>
+                  {room.story.victim.personality}
+                </p>
+              )}
+              <p className="mt-1 text-base leading-relaxed text-parchment-300">
+                {room.story.victim.causeOfDeath}
+              </p>
+            </div>
+            <OrnamentDivider />
+            <ul className="list-disc space-y-1 pl-5 text-base leading-relaxed text-parchment-300">
+              <li>Niente costumi, niente recitazione: solo conversazione, alibi e logica.</li>
+              <li>
+                <span className="text-blood-300">Solo il colpevole</span> può mentire spudoratamente
+                su alibi e orari.
+              </li>
+              <li>
+                Gli innocenti dicono la verità se messi alle strette, ma nascondono i propri
+                segreti per non finire nei guai.
+              </li>
+            </ul>
+          </div>
+
+          <SectionTitle>La Tua Scheda Segreta</SectionTitle>
+          <CharacterSheet char={myChar} victimPersonality={room.story.victim.personality} />
         </div>
       )}
 

@@ -270,6 +270,7 @@ export function generateFallbackStory(settings: RoomSettings): GeneratedStory {
 
   const characters: GeneratedCharacter[] = Array.from({ length: n }, (_, i) => {
     const other = names.length === n ? names[(i + 1) % n] : NAMES[(i + 1) % NAMES.length].split(" ")[0];
+    const other2 = names.length === n ? names[(i + 2) % n] : NAMES[(i + 2) % NAMES.length].split(" ")[0];
     return {
       id: `char_${i + 1}`,
       name: names.length === n ? names[i] : NAMES[i % NAMES.length],
@@ -281,10 +282,13 @@ export function generateFallbackStory(settings: RoomSettings): GeneratedStory {
       observations: [OBSERVATIONS[i % OBSERVATIONS.length].replace("{ALTRO}", other)],
       questions: [
         QUESTIONS[i % QUESTIONS.length].replace("{ALTRO}", other),
-        QUESTIONS[(i + 1) % QUESTIONS.length].replace(
-          "{ALTRO}",
-          names.length === n ? names[(i + 2) % n] : NAMES[(i + 2) % NAMES.length].split(" ")[0],
-        ),
+        QUESTIONS[(i + 1) % QUESTIONS.length].replace("{ALTRO}", other2),
+      ],
+      answers: [
+        i === culpritIndex
+          ? "Se ti chiedono del messaggio: dì che la vittima ti aveva chiesto un favore banale e devia in fretta su un altro argomento. Non inventare orari: resta vago."
+          : "Se ti chiedono dell'osservazione che hanno su di te: ammetti il dettaglio di minore importanza e spiega che cercavi solo di riprenderti ciò che ti spettava. Non mentire spudoratamente: devia.",
+        "Se le domande si fanno insistenti: ammetti il tuo segreto piuttosto che l'accusa principale. Meglio uscire imbarazzati che colpevoli.",
       ],
     };
   });
@@ -310,19 +314,25 @@ export function generateFallbackStory(settings: RoomSettings): GeneratedStory {
     },
     {
       title: "Fase 2: Il Rilascio dei Reperti",
-      globalClue: `REPERTO — Cronologia messaggi del telefono della vittima: alle 2:12 "Ti vedo tra dieci minuti, sei l'unica persona che sa tutto", alle 2:41 una chiamata interrotta verso lo studio. Il referto fissa la morte tra le 2:30 e le 3:00.`,
+      globalClue: "La polizia ha finito le prime verifiche: è il momento dei reperti.",
+      evidence: [
+        "REPERTO 1 — Cronologia messaggi del telefono della vittima: il suo ultimo messaggio, poco prima del ritrovamento, dice “Ti vedo tra dieci minuti, sei l'unica persona che sa tutto”. Il destinatario è salvato solo con un soprannome.",
+        "REPERTO 2 — Scontrino della stazione di servizio del bosco: benzina e un pacchetto di ghiaccio, comprati da uno di voi poco prima della cena. Il cassiere ricorda il volto, non il motivo.",
+        "REPERTO 3 — Appunto sul taccuino della vittima: “Se continua così, lo dico a tutti. L'ultima parola è mia”. Calligrafia furiosa; la frase era rivolta a qualcuno che era lì stasera.",
+        "REPERTO 4 — Referto: morte tra la fine della cena e il momento in cui il gruppo si è riunito attorno al fuoco. In quel lasso nessuno ricorda di aver visto la vittima viva.",
+      ],
       privateClues: Object.fromEntries(
         shuffle(characters).map((c, i) => [
           c.id,
           i === culpritIndex
-            ? "Il messaggio delle 2:12 era per te. Devi spiegare il contenuto senza confessare il delitto: giocati il tutto per tutto."
-            : "Sei stato/a visto/a vicino allo studio nell'ora fatale: preparati a spiegare il tuo passaggio con precisione.",
+            ? "Il messaggio era per te e lo scontrino è tuo. Preparati a spiegare entrambi senza confessare: devia, contraffà, accusa."
+            : "Uno dei reperti tocca anche te: preparati a spiegare il tuo passaggio con precisione, senza fare la figura del colpevole.",
         ]),
       ),
     },
     {
       title: "Fase 3: Il Confronto Finale",
-      globalClue: `REPERTO FINALE — Sul davanzale dello studio, una imprinta di scarpa taglia 38 con una crepa suola; il tappeto porta un secondo filo di lana grigia, identica a quella dell'abito di una persona presente. L'alibi principale non regge: è ora del confronto finale.`,
+      globalClue: `REPERTO FINALE — Accanto alla porta dello studio, un'orma di scarpa con la suola crepata; vicino, un filo di lana grigia identica a quella dell'abito di una persona presente. Il soprannome nel telefono corrisponde al vezzeggiativo che una sola persona usava con la vittima. È ora del confronto finale.`,
       privateClues: Object.fromEntries(
         shuffle(characters).map((c, i) => [
           c.id,
@@ -341,6 +351,8 @@ export function generateFallbackStory(settings: RoomSettings): GeneratedStory {
       name: victimName,
       age: 58,
       occupation: "Magnate dell'acciaio e collezionista d'arte",
+      personality:
+        "Era un uomo trascendente e vendicativo: teneva i conti con tutti, non restituiva mai i favori e si godeva nel far pesare i propri debiti, anche a un bicchiere di vino. Con gli amici era generoso in apparenza, ma ogni gentilezza aveva una contropartita.",
       causeOfDeath: "Colpo d'arma da fuoco nello studio, eseguito a breve distanza. Nessun segno di lotta.",
       isSuicideOrAccident: isTwist,
     },
