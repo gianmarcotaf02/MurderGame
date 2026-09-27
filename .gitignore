@@ -29,3 +29,8 @@ pnpm-debug.log*
 *.sw?
 
 .vercel
+
+# File temporanei con credenziali (mai commitare)
+.fb-*
+.vercel-token
+.fblogin
