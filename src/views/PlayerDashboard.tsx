@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, Lock, NotebookPen, ScrollText, Sparkles } from "lucide-react";
+import { BookOpen, Copy, Check, Lock, NotebookPen, ScrollText, Sparkles } from "lucide-react";
 import type { Room } from "../types";
 import type { Session } from "../session";
 import { ACT_LABELS, cn } from "../utils";
@@ -8,6 +8,34 @@ import { CharacterSheet } from "../components/CharacterSheet";
 import { Notebook } from "../components/Notebook";
 
 type Tab = "scheda" | "indizi" | "taccuino";
+
+function EvidenceItem({ text, index }: { text: string; index: number }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard non disponibile: il testo resta comunque leggibile
+    }
+  };
+  return (
+    <li
+      onClick={copy}
+      className="flex cursor-pointer items-start gap-2 rounded border border-gold-700/25 bg-ink-850/60 px-3 py-2.5 transition-colors hover:border-gold-500/50"
+      title="Tocca per copiare"
+    >
+      <span className="mt-0.5 shrink-0 font-display text-xs text-gold-500">{index}</span>
+      <span className="flex-1 text-base leading-relaxed text-parchment-200">{text}</span>
+      {copied ? (
+        <Check size={15} className="mt-1 shrink-0 text-emerald-400" />
+      ) : (
+        <Copy size={15} className="mt-1 shrink-0 text-parchment-400" />
+      )}
+    </li>
+  );
+}
 
 export function PlayerDashboard({ room, session }: { room: Room; session: Session }) {
   const myChar =
@@ -54,7 +82,10 @@ export function PlayerDashboard({ room, session }: { room: Room; session: Sessio
       {tab === "scheda" && (
         <div className="space-y-6">
           <SectionTitle>La Mia Scheda</SectionTitle>
-          <CharacterSheet char={myChar} />
+          <CharacterSheet
+            char={myChar}
+            victimPersonality={room.story?.victim.personality}
+          />
         </div>
       )}
 
@@ -139,6 +170,21 @@ export function PlayerDashboard({ room, session }: { room: Room; session: Sessio
                       </p>
                       <p className="text-lg leading-relaxed text-parchment-200">{round.globalClue}</p>
                     </div>
+
+                    {/* Reperti materiali: testo pronto da condividere via chat/WhatsApp */}
+                    {round.evidence && round.evidence.length > 0 && (
+                      <div className="border-t border-gold-700/25 pt-4">
+                        <p className="mb-2 font-display text-[11px] tracking-[0.22em] text-gold-500 uppercase">
+                          Reperti materiali (tocca per copiare e condividere)
+                        </p>
+                        <ul className="space-y-2">
+                          {round.evidence.map((ev, i) => (
+                            <EvidenceItem key={i} text={ev} index={i + 1} />
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
                     {privateClue && (
                       <div className="border-t border-gold-700/25 pt-4">
                         <p className="mb-1 font-display text-[11px] tracking-[0.22em] text-blood-400 uppercase">

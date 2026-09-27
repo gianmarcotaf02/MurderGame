@@ -147,7 +147,10 @@ export function HostConsole({ room, session }: { room: Room; session: Session })
           <SectionTitle>
             <UserRound size={13} className="mr-1.5 inline" /> La Tua Scheda ({hostChar.name})
           </SectionTitle>
-          <CharacterSheet char={hostChar} />
+          <CharacterSheet
+            char={hostChar}
+            victimPersonality={room.story?.victim.personality}
+          />
         </section>
       )}
 

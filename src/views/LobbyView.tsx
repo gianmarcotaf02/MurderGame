@@ -159,6 +159,20 @@ function WaitingSection({ room, session }: { room: Room; session: Session }) {
               {room.settings.allowSuicideOrAccident ? "ammessi" : "esclusi"}
             </dd>
           </div>
+          <div>
+            <dt className="inline text-parchment-400">Narratore: </dt>
+            <dd className="inline text-parchment-100">
+              {room.settings.externalNarrator ? "esterno (il GM guida)" : "assente (tutti giocano)"}
+            </dd>
+          </div>
+          {room.settings.participantNames.length > 0 && (
+            <div className="sm:col-span-2">
+              <dt className="inline text-parchment-400">Partecipanti: </dt>
+              <dd className="inline text-parchment-100">
+                {room.settings.participantNames.join(", ")}
+              </dd>
+            </div>
+          )}
         </dl>
       </section>
 
