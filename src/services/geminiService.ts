@@ -68,6 +68,7 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON valido, senza testo fuori dal JSON, 
     "name": "nome della vittima",
     "age": 45,
     "occupation": "professione o ruolo della vittima",
+    "personality": "presentazione precisa del CARATTERE della vittima: com'era, come trattava le persone, le sue abitudini e i suoi lati oscuri (2-3 frasi: ogni giocatore deve poterla citare)",
     "causeOfDeath": "dettaglio della morte come appare alla scoperta (1-2 frasi)",
     "isSuicideOrAccident": false
   },
@@ -79,11 +80,12 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON valido, senza testo fuori dal JSON, 
       "name": "nome del personaggio",
       "role": "legame con la vittima o ruolo breve, es. 'L'ex collega che non l'ha mai perdonata'",
       "publicBio": "cosa tutti gli altri sanno di lui/lei (1-2 frasi)",
-      "relationshipWithVictim": "il movente potenziale: perché la vittima lo/la danneggiava, minacciava o umiliava (1-2 frasi)",
+      "relationshipWithVictim": "il rapporto PRECISO col morto, citandone il carattere (es. 'era lui che si prendeva sempre i miei giochi di carte e non li restituiva mai'), più il movente potenziale: perché la vittima lo/la danneggiava o minacciava (2-3 frasi)",
       "secrets": ["il segreto inconfessabile: NON c'entra con l'omicidio, ma è il motivo per cui è agitato/a e reticente"],
-      "alibi": "versione pubblica: cosa dichiara di aver fatto nelle ultime 2 ore prima del ritrovamento del corpo",
+      "alibi": "versione pubblica: cosa dichiara di aver fatto nelle ultime 2 ore prima del ritrovamento del corpo (usa riferimenti vaghi e qualitativi, tipo 'dopo che abbiamo finito di mangiare' o 'mentre qualcuno accendeva il fuoco', NON orari precisi)",
       "observations": ["un dettaglio scomodo che ha visto o sentito su un ALTRO giocatore (indicalo per nome)"],
-      "questions": ["domanda investigativa specifica da fare a bruciapelo a un altro partecipante", "seconda domanda a bruciapelo rivolta a un altro partecipante diverso"]
+      "questions": ["domanda investigativa specifica da fare a bruciapelo a un altro partecipante", "seconda domanda a bruciapelo rivolta a un altro partecipante diverso"],
+      "answers": ["risposta pronta da dare se qualcuno ti chiede dell'osservazione che ha su di te o del tuo alibi: cosa ammettere, cosa negare, come deviare", "seconda risposta pronta per la domanda più pericolosa che potresti ricevere"]
     }
   ],
   "rounds": [
@@ -94,8 +96,9 @@ Rispondi ESCLUSIVAMENTE con un oggetto JSON valido, senza testo fuori dal JSON, 
     },
     {
       "title": "Fase 2: Il Rilascio dei Reperti",
-      "globalClue": "il reperto materiale principale (testo PRONTO da condividere via chat o foglietto: cronologia messaggi, scontrino con orario e luogo, appunto, referto con orario di morte). Deve smentire apertamente la versione di 2-3 giocatori",
-      "privateClues": { "char_1": "ulteriore reperto o dettaglio riservato: forza il giocatore a precisare o contraddice il suo alibi" }
+      "globalClue": "introduzione breve al rilascio dei reperti (1 frase, da leggere a voce se c'è il narratore)",
+      "evidence": ["reperto materiale 1: testo PRONTO da condividere via chat o foglietto (es. cronologia messaggi, scontrino, appunto, referto). Nettissimo e logico", "reperto 2: smentisce apertamente la versione di un giocatore", "reperto 3: ne smentisce un altro", "reperto 4: l'ultimo che costringe qualcuno a vuotare il sacco sui propri segreti"],
+      "privateClues": { "char_1": "istruzione riservata: quale reperto ti riguarda e come vuotare il sacco parzialmente senza confessare" }
     },
     {
       "title": "Fase 3: Il Confronto Finale",
@@ -112,7 +115,8 @@ VINCOLI IMPERATIVI:
 - I segreti inconfessabili NON sono la soluzione del delitto: creano imbarazzo e sospetto, niente di più.
 - Ogni personaggio ha UNA observation su un altro giocatore e DUE domande a bruciapelo rivolte a due partecipanti DIVERSI: sono il carburante della conversazione.
 - Esattamente 3 fasi/round; ogni round ha un globalClue e un privateClue per OGNI personaggio (chiavi = id dei personaggi).
-- Il globalClue della Fase 2 deve essere un reperto materiale PRONTO DA CONDIVIDERE via chat o foglietto (testo breve, concreto, con orari precisi).
+- La FASE 2 deve avere ESATTAMENTE 4 reperti materiali nell'array "evidence": testi netti, logici, pronti da condividere via chat/WhatsApp o stampare su foglietti. Devono smentire apertamente la versione di 2-3 giocatori e costringerli a vuotare il sacco sui loro segreti.
+- IMPORTANTE: NON riempire il gioco di orari precisi da incrociare. Usa POCI orari (solo 1-2, quelli del reperto decisivo) e alibi vaghi/qualitativi ('dopo che abbiamo smontato la tavola', 'mentre qualcuno andava a prendere la legna'). La deduzione deve poggiare su comportamenti, osservazioni e reperti, non su cronometri.
 - Tono: ${settings.tone}. Ambientazione: ${settings.setting}. Complessità: ${settings.complexity}.
 - Colpi di scena suicidio simulato/incidente ammessi: ${settings.allowSuicideOrAccident ? "SÌ, puoi usarli se rendono il caso migliore" : "NO, deve essere un omicidio volontario"}.
 ${settings.customNotes ? `- Note e vincoli speciali dell'organizzatore (OBBLIGATORI): ${settings.customNotes}` : ""}
@@ -144,9 +148,13 @@ function validateStory(story: GeneratedStory, n: number): GeneratedStory {
   for (const c of story.characters) {
     if (!Array.isArray(c.observations)) c.observations = [];
     if (!Array.isArray(c.questions)) c.questions = [];
+    if (!Array.isArray(c.answers)) c.answers = [];
     if (!Array.isArray(c.secrets) || c.secrets.length === 0) {
       c.secrets = ["Un segreto che preferiresti non svelare."];
     }
+  }
+  if (!story.victim.personality) {
+    story.victim.personality = "Carismatico/a e dominante: prendeva tutto troppo sul personale e non perdonava uno smacco.";
   }
   return story;
 }
